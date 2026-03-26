@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🎬 CineEmoji — Guess the Movie</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
@@ -43,6 +43,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
+    background-color: #f8f9fa; /* Fallback */
     background: var(--bg-gradient);
     color: var(--text);
     font-family: 'Outfit', sans-serif;
@@ -55,6 +56,20 @@
     transition: background 0.4s ease, color 0.4s ease;
   }
 
+  /* Removed SVG noise filter because it crashes Android WebViews / in-app browsers */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    height: 60vh;
+    background: radial-gradient(ellipse, var(--glow) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
   .wrap {
     position: relative;
     z-index: 1;
