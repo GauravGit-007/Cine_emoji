@@ -22,6 +22,10 @@ client = OpenAI(
     api_key=os.getenv("NVIDIA_API_KEY")
 )
 
+@app.get("/")
+def read_root():
+    return {"status": "Online!", "message": "Cine Emoji Backend is awake and ready!"}
+
 @app.get("/generate_movie")
 def generate_movie(category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
     exclude_text = f" CRITICAL RULE: DO NOT generate any of the following movies: {exclude}. Pick something completely different!" if exclude else ""
