@@ -23,8 +23,9 @@ client = OpenAI(
 )
 
 @app.get("/generate_movie")
-def generate_movie(category: str = "Hollywood", genre: str = "Any"):
-    prompt = f"Generate a random {category} movie from the {genre} genre. Provide the movie title (in English letters) and an emoji representation (2-6 emojis) for it. Additionally, provide 3 similar but incorrect movie titles to serve as decoys for a multiple choice game. Return ONLY valid JSON with keys 'title', 'emojis', and 'decoys' (a list of 3 strings). For example: {{\"title\": \"Batman\", \"emojis\": \"🦇🕵️\", \"decoys\": [\"Superman\", \"Iron Man\", \"Spider-Man\"]}}."
+def generate_movie(category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
+    exclude_text = f" CRITICAL RULE: DO NOT generate any of the following movies: {exclude}. Pick something completely different!" if exclude else ""
+    prompt = f"Generate a random {category} movie from the {genre} genre.{exclude_text} Provide the movie title (in English letters) and an emoji representation (2-6 emojis) for it. Additionally, provide 3 similar but incorrect movie titles to serve as decoys for a multiple choice game. Return ONLY valid JSON with keys 'title', 'emojis', and 'decoys' (a list of 3 strings). For example: {{\"title\": \"Batman\", \"emojis\": \"🦇🕵️\", \"decoys\": [\"Superman\", \"Iron Man\", \"Spider-Man\"]}}."
     
     completion = client.chat.completions.create(
         model="meta/llama-3.1-70b-instruct",

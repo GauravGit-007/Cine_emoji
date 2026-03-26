@@ -567,7 +567,8 @@ let state = {
   decoys: [],
   words: [],
   revealedWords: [],
-  gameOver: true
+  gameOver: true,
+  playedMovies: []
 };
 
 function initTypeHintBox() {
@@ -703,9 +704,10 @@ async function startGame() {
   document.getElementById('timer').textContent = "--";
   document.getElementById('timer').classList.remove('timer-warning');
 
+  const excludedList = state.playedMovies.join(', ');
   try {
     const url = await getBackendUrl();
-    const resp = await fetch(`${url}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
+    const resp = await fetch(`${url}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}&exclude=${encodeURIComponent(excludedList)}`);
     if(!resp.ok) throw new Error("Server Failed");
     const data = await resp.json();
     
@@ -786,6 +788,11 @@ function endRound(win, reason) {
   state.gameOver = true;
   clearInterval(state.timerInterval);
   toggleGameButtons(false);
+  
+  // Track that we played this movie so the LLM doesn't repeat it!
+  if (state.movieTitle && !state.playedMovies.includes(state.movieTitle)) {
+    state.playedMovies.push(state.movieTitle);
+  }
 
   // Reveal everything based on mode
   if(state.mode === 'TYPE') {
