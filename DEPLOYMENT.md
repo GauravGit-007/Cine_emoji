@@ -12,7 +12,7 @@ Our backend is a Python app. Render natively supports `requirements.txt` and `uv
 - **Repository**: Connect your GitHub and select `Cine_emoji`
 - **Environment**: `Python 3`
 - **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+- **Start Command**: `python backend/main.py`
 - **Environment Variables**:
   - Key: `NVIDIA_API_KEY`
   - Value: *(paste your secret NVIDIA NIM key here)*
