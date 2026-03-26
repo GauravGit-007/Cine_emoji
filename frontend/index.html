@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 CineEmoji — Guess the Movie</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    --surface: rgba(255, 255, 255, 0.85);
+    --surface-blur: blur(16px);
+    --surface2: #f1f3f5;
+    --accent: #f5c518; 
+    --accent-hover: #e5b500;
+    --accent-text: #000000;
+    --danger: #fa5252;
+    --success: #40c057;
+    --text: #212529;
+    --muted: #868e96;
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    --glow: rgba(245, 197, 24, 0.3);
+  }
+
+  [data-theme='dark'] {
+    --bg-gradient: linear-gradient(135deg, #0a0a0f 0%, #1a1a24 100%);
+    --surface: rgba(19, 19, 26, 0.85);
+    --surface-blur: blur(16px);
+    --surface2: #242433;
+    --accent: #f5c518;
+    --accent-hover: #ffd84a;
+    --accent-text: #0a0a0f;
+    --danger: #e05c5c;
+    --success: #6ee87a;
+    --text: #f8f9fa;
+    --muted: #666680;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glow: rgba(245, 197, 24, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-gradient);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 760px;
+    padding: 32px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  header { 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .logo-block {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(38px, 6vw, 56px);
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 20px var(--glow);
+  }
+  .logo span { color: var(--text); }
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: var(--surface-blur);
+    color: var(--text);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+  }
+  .theme-toggle:hover {
+    transform: rotate(15deg) scale(1.05);
+  }
+
+  .glass-panel {
+    background: var(--surface);
+    backdrop-filter: var(--surface-blur);
+    -webkit-backdrop-filter: var(--surface-blur);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .scorebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 28px;
+  }
+  .score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .score-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .score-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .timer-box {
+    color: var(--text);
+  }
+  .timer-warning {
+    color: var(--danger);
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse {
+    from { color: var(--text); }
+    to { color: var(--danger); transform: scale(1.1); }
+  }
+
+  .divider-v {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+  }
+
+  .config-section {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .config-item label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .config-item select, .config-item input {
+    appearance: none;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  
+  .config-item select:focus, .config-item input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  @media (max-width: 650px) {
+    .config-grid { grid-template-columns: 1fr; }
+  }
+
+  .btn {
+    padding: 16px 24px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary { 
+    background: var(--accent); 
+    color: var(--accent-text);
+    box-shadow: 0 4px 14px var(--glow);
+  }
+  .btn-primary:hover:not(:disabled) { 
+    background: var(--accent-hover); 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 20px var(--glow);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+  .btn-ghost {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover:not(:disabled) { 
+    border-color: var(--text); 
+    background: var(--surface);
+  }
+  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .game-ui {
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .emoji-box {
+    width: 100%;
+    min-height: 140px;
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(48px, 12vw, 80px);
+    letter-spacing: 16px;
+    padding: 24px;
+    text-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+  }
+  [data-theme='dark'] .emoji-box { text-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+
+  .emoji-box.generating {
+    animation: border-pulse 2s infinite alternate;
+  }
+  @keyframes border-pulse {
+    from { border-color: var(--border); }
+    to { border-color: var(--accent); }
+  }
+
+  .title-hint-box {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: var(--text);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hint-word {
+    background: var(--surface2);
+    border-bottom: 3px solid var(--accent);
+    padding: 6px 12px;
+    border-radius: 6px 6px 0 0;
+    min-width: 50px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  .hint-word.hidden {
+    color: transparent;
+    border-bottom: 3px dashed var(--muted);
+    background: transparent;
+  }
+
+  .input-row {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+  }
+  
+  .guess-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 0 20px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .guess-input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 4px var(--glow);
+  }
+
+  .mcq-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .mcq-btn {
+    padding: 18px 14px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .mcq-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+    transform: translateY(-2px);
+  }
+  .mcq-btn.fade-out {
+    opacity: 0.2;
+    pointer-events: none;
+    transform: scale(0.95);
+  }
+
+  @media (max-width: 500px) {
+    .input-row { flex-direction: column; }
+    .mcq-grid { grid-template-columns: 1fr; }
+    .btn { padding: 18px; }
+  }
+
+  .action-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .feedback {
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    display: none;
+    animation: slideDown 0.3s ease forwards;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .feedback.correct { 
+    background: rgba(64, 192, 87, 0.15); 
+    border: 1px solid var(--success); 
+    color: var(--success); 
+    display: block; 
+  }
+  .feedback.wrong { 
+    background: rgba(250, 82, 82, 0.15); 
+    border: 1px solid var(--danger); 
+    color: var(--danger); 
+    display: block; 
+  }
+
+  .layer-hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo-block">
+      <div class="logo">Cine<span>Emoji</span></div>
+      <div class="tagline">Infinite AI Movie Logic</div>
+    </div>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+      🌙
+    </button>
+  </header>
+
+  <div class="glass-panel scorebar">
+    <div class="score-item">
+      <span class="score-label">Score</span>
+      <span class="score-value" id="score">0</span>
+    </div>
+    <div class="divider-v"></div>
+    <div class="score-item">
+      <span class="score-label">Time Left</span>
+      <span class="score-value timer-box" id="timer">--</span>
+    </div>
+    <div class="divider-v"></div>
+    <div class="score-item">
+      <span class="score-label">Streak</span>
+      <span class="score-value" id="streak">0</span>
+    </div>
+  </div>
+
+  <div class="glass-panel config-section" id="config-ui">
+    <div class="config-grid">
+      <div class="config-item">
+        <label>Game Mode</label>
+        <select id="config-mode">
+          <option value="MCQ">Multiple Choice (MCQ)</option>
+          <option value="TYPE">Type the Answer</option>
+        </select>
+      </div>
+      <div class="config-item">
+        <label>Timer (Seconds)</label>
+        <input type="number" id="config-timer" value="20" min="5" max="120" />
+      </div>
+      <div class="config-item">
+        <label>Category</label>
+        <select id="config-category">
+          <option value="Hollywood">Hollywood</option>
+          <option value="Bollywood">Bollywood</option>
+          <option value="Global">Global / Foreign</option>
+          <option value="Any">Any Category</option>
+        </select>
+      </div>
+      <div class="config-item">
+        <label>Genre</label>
+        <select id="config-genre">
+          <option value="Any">All Genres</option>
+          <option value="Action">Action</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Romance">Romance</option>
+          <option value="Horror">Horror</option>
+          <option value="Sci-Fi">Sci-Fi</option>
+          <option value="Thriller">Thriller</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="font-size: 18px; padding: 20px" onclick="startGame()">▶ GENERATE & PLAY</button>
+  </div>
+
+  <div class="glass-panel game-ui layer-hidden" id="game-ui">
+    <div class="emoji-box" id="emoji-box">⏳</div>
+    
+    <div class="title-hint-box layer-hidden" id="title-hint-box"></div>
+    
+    <div id="feedback" class="feedback"></div>
+
+    <!-- TYPE MODE -->
+    <div class="input-row layer-hidden" id="type-section">
+      <input type="text" class="guess-input" id="guess-input" placeholder="Type the movie name..." autocomplete="off" />
+      <button class="btn btn-primary" id="guess-btn" onclick="submitTypeGuess()">Submit Guess</button>
+    </div>
+
+    <!-- MCQ MODE -->
+    <div class="mcq-grid layer-hidden" id="mcq-section">
+      <!-- Buttons will be injected here -->
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-ghost" style="flex:1" id="hint-btn" onclick="useHint()">💡 Hint (-10)</button>
+      <button class="btn btn-ghost" style="flex:1" id="reveal-btn" onclick="useReveal()">👁️ Reveal</button>
+      <button class="btn btn-primary layer-hidden" style="flex:2" id="next-btn" onclick="startGame()">Next Movie ➔</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// --- Theme Handling ---
+const themeBtn = document.getElementById('theme-btn');
+const root = document.documentElement;
+
+let isDark = false;
+root.removeAttribute('data-theme');
+themeBtn.innerText = '🌙';
+
+function toggleTheme() {
+  isDark = !isDark;
+  if(isDark) {
+    root.setAttribute('data-theme', 'dark');
+    themeBtn.innerText = '☀️';
+  } else {
+    root.removeAttribute('data-theme');
+    themeBtn.innerText = '🌙';
+  }
+}
+// ----------------------
+
+let state = {
+  mode: 'TYPE', // 'TYPE' or 'MCQ'
+  score: 0,
+  streak: 0,
+  timerInterval: null,
+  timeLeft: 0,
+  movieTitle: "",
+  emojis: "",
+  decoys: [],
+  words: [],
+  revealedWords: [],
+  gameOver: true
+};
+
+function initTypeHintBox() {
+  const box = document.getElementById('title-hint-box');
+  box.innerHTML = '';
+  // Only split by spaces
+  state.words = state.movieTitle.split(' ');
+  state.revealedWords = state.words.map(() => false);
+  
+  state.words.forEach((word, idx) => {
+    let el = document.createElement('div');
+    el.className = 'hint-word hidden';
+    el.id = `hw-${idx}`;
+    el.textContent = word; 
+    box.appendChild(el);
+  });
+}
+
+function initMCQGrid() {
+  const grid = document.getElementById('mcq-section');
+  grid.innerHTML = '';
+  
+  // Combine title + decoys, then shuffle
+  let options = [state.movieTitle, ...state.decoys];
+  options.sort(() => Math.random() - 0.5);
+  
+  options.forEach((opt, index) => {
+    let btn = document.createElement('button');
+    btn.className = 'mcq-btn';
+    btn.id = `mcq-btn-${index}`;
+    btn.textContent = opt;
+    btn.onclick = () => submitMCQGuess(opt);
+    grid.appendChild(btn);
+  });
+}
+
+function useHint() {
+  if(state.gameOver) return;
+  state.score = Math.max(0, state.score - 10);
+  updateScoreUI();
+
+  if(state.mode === 'TYPE') {
+    const unrevealed = state.revealedWords.map((val, idx) => !val ? idx : -1).filter(idx => idx !== -1);
+    if(unrevealed.length === 0) return;
+    
+    // Reveal random word
+    const rIdx = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+    state.revealedWords[rIdx] = true;
+    document.getElementById(`hw-${rIdx}`).classList.remove('hidden');
+
+    if(unrevealed.length === 1) { 
+        endRound(false, "You used all hints!");
+    }
+  } else if(state.mode === 'MCQ') {
+    // 50/50: remove 2 wrong answers
+    const buttons = document.querySelectorAll('.mcq-btn:not(.fade-out)');
+    let wrongBtns = [];
+    buttons.forEach(btn => {
+      if(normalize(btn.textContent) !== normalize(state.movieTitle)) {
+        wrongBtns.push(btn);
+      }
+    });
+    
+    // Remove exactly 2 wrong buttons (or up to 2)
+    wrongBtns.sort(() => Math.random() - 0.5);
+    wrongBtns.slice(0, 2).forEach(btn => btn.classList.add('fade-out'));
+    
+    document.getElementById('hint-btn').disabled = true; // only use 50/50 once
+  }
+}
+
+function useReveal() {
+  if(state.gameOver) return;
+  endRound(false, "Revealed!");
+}
+
+async function startGame() {
+  document.getElementById('config-ui').classList.add('layer-hidden');
+  document.getElementById('game-ui').classList.remove('layer-hidden');
+  
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('emoji-box').textContent = "🤖";
+  document.getElementById('emoji-box').classList.add('generating');
+  
+  state.mode = document.getElementById('config-mode').value;
+  
+  if (state.mode === 'TYPE') {
+    document.getElementById('type-section').classList.remove('layer-hidden');
+    document.getElementById('title-hint-box').classList.remove('layer-hidden');
+    document.getElementById('mcq-section').classList.add('layer-hidden');
+    document.getElementById('title-hint-box').innerHTML = '';
+    document.getElementById('guess-input').value = '';
+    document.getElementById('hint-btn').innerText = "💡 Reveal Word (-10)";
+  } else {
+    document.getElementById('type-section').classList.add('layer-hidden');
+    document.getElementById('title-hint-box').classList.add('layer-hidden');
+    document.getElementById('mcq-section').classList.remove('layer-hidden');
+    document.getElementById('mcq-section').innerHTML = '';
+    document.getElementById('hint-btn').innerText = "💡 50/50 (-10)";
+  }
+  
+  toggleGameButtons(false);
+  
+  const cat = document.getElementById('config-category').value;
+  const gen = document.getElementById('config-genre').value;
+  let tConf = parseInt(document.getElementById('config-timer').value, 10);
+  if(isNaN(tConf) || tConf < 5) tConf = 20;
+
+  state.gameOver = false;
+  clearInterval(state.timerInterval);
+  document.getElementById('timer').textContent = "--";
+  document.getElementById('timer').classList.remove('timer-warning');
+
+  try {
+    const resp = await fetch(`http://localhost:8000/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
+    if(!resp.ok) throw new Error("Server Failed");
+    const data = await resp.json();
+    
+    if(data.error) console.error("API Error", data.error);
+
+    state.movieTitle = data.title;
+    state.emojis = data.emojis;
+    state.decoys = data.decoys || ["Decoy A", "Decoy B", "Decoy C"];
+    
+    document.getElementById('emoji-box').textContent = state.emojis;
+    document.getElementById('emoji-box').classList.remove('generating');
+    
+    if(state.mode === 'TYPE') initTypeHintBox();
+    else initMCQGrid();
+    
+    state.timeLeft = tConf;
+    updateTimerUI();
+    toggleGameButtons(true);
+    if(state.mode === 'TYPE') document.getElementById('guess-input').focus();
+
+    state.timerInterval = setInterval(() => {
+      state.timeLeft--;
+      updateTimerUI();
+      if(state.timeLeft <= 0) {
+        endRound(false, "⏰ Time's Up!");
+      }
+    }, 1000);
+
+  } catch(err) {
+    document.getElementById('emoji-box').textContent = "⚠️ Error fetching movie!";
+    document.getElementById('emoji-box').classList.remove('generating');
+    document.getElementById('config-ui').classList.remove('layer-hidden');
+    document.getElementById('game-ui').classList.add('layer-hidden');
+  }
+}
+
+function normalize(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function submitTypeGuess() {
+  if(state.gameOver) return;
+  const guess = document.getElementById('guess-input').value.trim();
+  if(!guess) return;
+  handleGuessValidation(guess);
+}
+
+function submitMCQGuess(guess) {
+  if(state.gameOver) return;
+  handleGuessValidation(guess);
+}
+
+function handleGuessValidation(guess) {
+  const exact = normalize(guess) === normalize(state.movieTitle);
+  if(exact) {
+    endRound(true, "Correct!");
+  } else {
+    // Show wrong feedback momentarily
+    document.getElementById('guess-input').value = '';
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback wrong';
+    fb.textContent = "❌ Incorrect! Keep trying.";
+    state.streak = 0;
+    updateScoreUI();
+    
+    if(state.mode === 'MCQ') {
+      // Find the button and fade it out so they don't click it again
+      document.querySelectorAll('.mcq-btn').forEach(btn => {
+        if(btn.textContent === guess) btn.classList.add('fade-out');
+      });
+    }
+
+    setTimeout(() => { if(!state.gameOver) document.getElementById('feedback').className = 'feedback'; }, 1500);
+  }
+}
+
+function endRound(win, reason) {
+  state.gameOver = true;
+  clearInterval(state.timerInterval);
+  toggleGameButtons(false);
+
+  // Reveal everything based on mode
+  if(state.mode === 'TYPE') {
+    state.revealedWords = state.revealedWords.map(() => true);
+    state.words.forEach((w, idx) => document.getElementById(`hw-${idx}`)?.classList.remove('hidden'));
+  } else {
+    // highlight correct button
+    document.querySelectorAll('.mcq-btn').forEach(btn => {
+      if(normalize(btn.textContent) === normalize(state.movieTitle)) {
+        btn.style.borderColor = "var(--success)";
+        btn.style.color = "var(--success)";
+      } else {
+        btn.classList.add('fade-out');
+      }
+    });
+  }
+
+  const fb = document.getElementById('feedback');
+  if(win) {
+    const streakBonus = state.streak * 20;
+    const timeBonus = state.timeLeft * 2;
+    state.score += (100 + streakBonus + timeBonus); 
+    state.streak++;
+    fb.className = 'feedback correct';
+    fb.textContent = `✅ ${reason} +${100 + streakBonus + timeBonus} pts!`;
+  } else {
+    state.streak = 0;
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `❌ ${reason} <br><br>The movie was <strong>"${state.movieTitle}"</strong>`;
+  }
+  
+  updateScoreUI();
+  document.getElementById('next-btn').classList.remove('layer-hidden');
+  document.getElementById('config-ui').classList.remove('layer-hidden'); 
+}
+
+function updateScoreUI() {
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('streak').textContent = state.streak;
+}
+
+function updateTimerUI() {
+  const tbox = document.getElementById('timer');
+  tbox.textContent = state.timeLeft;
+  if(state.timeLeft <= 5 && state.timeLeft > 0) tbox.classList.add('timer-warning');
+  else tbox.classList.remove('timer-warning');
+}
+
+function toggleGameButtons(active) {
+  document.getElementById('guess-input').disabled = !active;
+  document.getElementById('guess-btn').disabled = !active;
+  document.getElementById('hint-btn').disabled = !active;
+  document.getElementById('reveal-btn').disabled = !active;
+  document.getElementById('next-btn').classList.add('layer-hidden');
+  if(!active) {
+    document.querySelectorAll('.mcq-btn').forEach(b => b.classList.add('fade-out'));
+  }
+}
+
+document.getElementById('guess-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitTypeGuess();
+});
+</script>
+</body>
+</html>

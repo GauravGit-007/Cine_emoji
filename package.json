@@ -1,0 +1,19 @@
+{
+  "name": "cine_emoji",
+  "version": "1.0.0",
+  "description": "## Files - `server.py` — FastAPI backend (proxies NVIDIA NIM API) - `movie-emoji-guesser.html` — Game frontend - `requirements.txt` — Python dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "npx kill-port 8000 3000",
+    "start": "concurrently \"python backend/main.py\" \"serve frontend -p 3000\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "kill-port": "^2.0.1",
+    "serve": "^14.2.6"
+  }
+}
