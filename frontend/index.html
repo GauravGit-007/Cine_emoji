@@ -629,6 +629,28 @@ function useReveal() {
   endRound(false, "Revealed!");
 }
 
+let BACKEND_URL = null;
+
+async function getBackendUrl() {
+  if (BACKEND_URL) return BACKEND_URL;
+  
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    BACKEND_URL = 'http://localhost:8000';
+    return BACKEND_URL;
+  }
+  
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    BACKEND_URL = data.BACKEND_URL;
+  } catch(e) {
+    console.warn("Failed to fetch /api/config. Using fallback.");
+    BACKEND_URL = 'http://localhost:8000';
+  }
+  return BACKEND_URL;
+}
+
+// ... unchanged logic inside startGame ...
 async function startGame() {
   document.getElementById('config-ui').classList.add('layer-hidden');
   document.getElementById('game-ui').classList.remove('layer-hidden');
@@ -666,12 +688,9 @@ async function startGame() {
   document.getElementById('timer').textContent = "--";
   document.getElementById('timer').classList.remove('timer-warning');
 
-  const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:8000' 
-    : 'https://DEPLOYED-RENDER-APP-NAME.onrender.com'; // TODO: Update this to your actual Render URL!
-
   try {
-    const resp = await fetch(`${BACKEND_URL}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
+    const url = await getBackendUrl();
+    const resp = await fetch(`${url}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
     if(!resp.ok) throw new Error("Server Failed");
     const data = await resp.json();
     

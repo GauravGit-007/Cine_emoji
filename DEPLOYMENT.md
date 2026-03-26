@@ -25,16 +25,16 @@ Our backend is a Python app. Render natively supports `requirements.txt` and `uv
 Our frontend is a plain static HTML/JS application located in the `/frontend` folder.
 
 **Crucial Step Before Deploying:**
-1. Open `frontend/index.html`.
-2. Locate the line that defines `BACKEND_URL` (around line 670).
-3. Replace the placeholder `'https://DEPLOYED-RENDER-APP-NAME.onrender.com'` with your actual Render URL from Step 1!
-4. Commit and push this updated `index.html` to GitHub.
+You no longer need to hardcode the Backend URL in `index.html`!
+We added a Vercel Serverless Function to dynamically read your Render URL via a secure Environment Variable!
 
 **Preset Configuration in Vercel Dashboard:**
 - **Repository**: Import your `Cine_emoji` GitHub project.
 - **Root Directory**: Click "Edit" and change it to `frontend` so Vercel knows where your `index.html` is.
-- **Framework Preset**: `Other` (because it is standard HTML and has no framework).
+- **Framework Preset**: `Other`
 - **Build Command**: *(Leave empty)* 
-- **Output Directory**: *(Leave empty)*
+- **Environment Variables**:
+  - Key: `RENDER_BACKEND_URL`
+  - Value: *(Paste your complete Render URL here e.g. `https://cine-emoji.onrender.com`)*
 
 Click **Deploy**!
