@@ -666,8 +666,12 @@ async function startGame() {
   document.getElementById('timer').textContent = "--";
   document.getElementById('timer').classList.remove('timer-warning');
 
+  const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : 'https://DEPLOYED-RENDER-APP-NAME.onrender.com'; // TODO: Update this to your actual Render URL!
+
   try {
-    const resp = await fetch(`http://localhost:8000/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
+    const resp = await fetch(`${BACKEND_URL}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}`);
     if(!resp.ok) throw new Error("Server Failed");
     const data = await resp.json();
     
