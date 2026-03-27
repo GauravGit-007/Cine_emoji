@@ -438,6 +438,20 @@
   }
 
   .layer-hidden { display: none !important; }
+
+  /* --- Aura & Reactions --- */
+  .reaction-emoji {
+    position: fixed;
+    font-size: 3.5rem;
+    pointer-events: none;
+    z-index: 9999;
+    animation: floatUp 2s ease-out forwards;
+  }
+
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0px) scale(0.5) rotate(-20deg); }
+    100% { opacity: 0; transform: translateY(-400px) scale(1.5) rotate(20deg); }
+  }
 </style>
 </head>
 <body>
@@ -448,9 +462,12 @@
       <div class="logo">Cine<span>Emoji</span></div>
       <div class="tagline">Infinite AI Movie Logic</div>
     </div>
-    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
-      🌙
-    </button>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div id="aura-display" style="font-weight:600; font-size:1.1rem; background:var(--surface); padding:8px 16px; border-radius:20px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.05); color:var(--text); transition:all 0.3s; z-index: 10;">✨ Aura: 0</div>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+        🌙
+      </button>
+    </div>
   </header>
 
   <div class="glass-panel scorebar">
@@ -640,6 +657,10 @@ function initMCQGrid() {
 
 function useHint() {
   if(state.gameOver) return;
+  
+  // Deduct Aura points for using hints!
+  updateAura(-10);
+  
   state.score = Math.max(0, state.score - 10);
   updateScoreUI();
 
@@ -847,7 +868,17 @@ function endRound(win, reason) {
   if(win) {
     const streakBonus = state.streak * 20;
     const timeBonus = state.timeLeft * 2;
-    state.score += (100 + streakBonus + timeBonus); 
+    const roundScore = 100 + streakBonus + timeBonus;
+    state.score += roundScore; 
+    
+    // Award Aura and trigger animation
+    updateAura(roundScore);
+    celebrate();
+    
+    // Inject bonus text after a micro delay to ensure fb is rendered
+    setTimeout(() => {
+        fb.innerHTML += `<br/><small style="color:var(--accent); font-size: 0.9rem">+${roundScore} Aura Points!</small>`;
+    }, 50);
     state.streak++;
     fb.className = 'feedback correct';
     fb.textContent = `✅ ${reason} +${100 + streakBonus + timeBonus} pts!`;
