@@ -6,12 +6,12 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body, html { width: 100%; height: 100%; overflow: hidden; background: transparent; }
-#wrap{background:#0a0010;display:flex;flex-direction:column;align-items:center;font-family:'Courier New',monospace;padding:12px;gap:8px; width:100%; height:100vh;}
-#hud{display:flex;justify-content:space-between;width:100%;max-width:640px;padding:8px 16px;background:#0d001a;border:2px solid #4a1d96;border-radius:6px;color:#fbbf24;font-size:14px;letter-spacing:2px;}
+#wrap{background:#0a0010;display:flex;flex-direction:column;align-items:center;font-family:'Courier New',monospace;padding:12px;gap:8px; width:100%; height:100vh; padding-bottom: 100px;}
+#hud{display:flex;justify-content:space-between;width:100%;max-width:640px;padding:8px 16px;background:#0d001a;border:2px solid #4a1d96;border-radius:6px;color:#fbbf24;font-size:14px;letter-spacing:2px; z-index: 50;}
 #hud span{color:#c4b5fd;font-size:12px;}
 .hv{color:#fbbf24!important;font-size:16px!important;font-weight:900;}
 #gameCanvas{border:2px solid #7c3aed;border-radius:4px;image-rendering:pixelated;image-rendering:crisp-edges;display:block;width:100%;max-width:640px;height:auto;aspect-ratio:2/1;}
-#controls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:4px;width:100%;max-width:640px;}
+#controls{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:100%;max-width:640px;padding:0 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:4px;z-index:100;}
 .cbtn{height:60px;background:#0d001a;border:2px solid #4a1d96;border-radius:6px;color:#c4b5fd;font-size:24px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;display:flex;align-items:center;justify-content:center;}
 .cbtn:active{background:#1a0a2e;border-color:#a855f7;}
 #story-overlay{position:absolute;inset:0;background:rgba(0,0,16,0.96);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:4px;}
@@ -47,8 +47,8 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: transparen
   <div id="controls">
     <button class="cbtn" id="btn-left" ontouchstart="keys.left=true" ontouchend="keys.left=false" onmousedown="keys.left=true" onmouseup="keys.left=false">◀</button>
     <button class="cbtn" id="btn-right" ontouchstart="keys.right=true" ontouchend="keys.right=false" onmousedown="keys.right=true" onmouseup="keys.right=false">▶</button>
-    <button class="cbtn" ontouchstart="doJump()" onmousedown="doJump()">↑</button>
-    <button class="cbtn" ontouchstart="keys.attack=true;setTimeout(()=>keys.attack=false,200)" onmousedown="keys.attack=true;setTimeout(()=>keys.attack=false,200)">⚔</button>
+    <button class="cbtn" id="btn-up" ontouchstart="doJump()" onmousedown="doJump()">↑</button>
+    <button class="cbtn" id="btn-atk" ontouchstart="keys.attack=true;setTimeout(()=>keys.attack=false,200)" onmousedown="keys.attack=true;setTimeout(()=>keys.attack=false,200)">⚔</button>
   </div>
 </div>
 <script>
@@ -161,10 +161,17 @@ function drawEnemy(x,y,t,type){
   } else if(type==='skull'){
     const sk=[[0,1,1,1,1,1,1,0],[1,1,1,1,1,1,1,1],[1,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[1,1,1,1,1,1,1,1],[0,1,0,1,1,0,1,0],[0,1,1,1,1,1,1,0],[0,0,1,0,0,1,0,0]];
     sk.forEach((row,j)=>row.forEach((v,i)=>{if(v){ctx.fillStyle=(j===2||j===3)?'#1e1040':'#e5e7eb';ctx.fillRect(i*SC,j*SC,SC,SC);}}));
-  } else {
-    const sl=[[0,1,1,1,1,0],[1,1,1,1,1,1],[1,0,1,1,0,1],[1,1,1,1,1,1],[0,1,0,0,1,0],[0,1,1,1,1,0]];
-    sl.forEach((row,j)=>row.forEach((v,i)=>{if(v){ctx.fillStyle=(j===2)?'#f87171':'#7c3aed';ctx.fillRect(i*SC,j*SC,SC,SC);}}));
   }
+  ctx.restore();
+}
+
+function drawBoss(b, camX) {
+  ctx.save(); ctx.translate(Math.round(b.x-camX), Math.round(b.y));
+  ctx.fillStyle='#ef4444'; ctx.fillRect(0,0,64,64); // Body
+  ctx.fillStyle='#000'; ctx.fillRect(12,12,12,12); ctx.fillRect(40,12,12,12); // Eyes
+  ctx.fillStyle='#fbbf24'; ctx.fillRect(20,40,24,8); // Mouth
+  ctx.fillStyle='#000'; ctx.fillRect(0,-16,64,8); // HP BG
+  ctx.fillStyle='#4ade80'; ctx.fillRect(1,-15, Math.max(0,62*b.hp/8), 6); // HP Bar
   ctx.restore();
 }
 
@@ -177,37 +184,39 @@ function drawCoin(x,y,t,emoji){
 }
 
 function drawBG(camX){
-  ctx.fillStyle='#0a0010'; ctx.fillRect(0,0,W,H);
+  const isLava = camX > 800 && camX < 2100;
+  const isBoss = camX >= 2100;
+  ctx.fillStyle=isLava?'#1a0000':(isBoss?'#001a0a':'#0a0010'); ctx.fillRect(0,0,W,H);
   for(let i=0;i<60;i++){
     const sx=(((i*137+50)%600)-camX*0.1)%W;
     const sy=(i*73)%H*0.6;
     const a=0.3+0.4*Math.sin(Date.now()*0.001+i);
-    ctx.fillStyle=`rgba(167,139,250,${a})`;
+    ctx.fillStyle=isLava?`rgba(250,100,100,${a})`:(isBoss?`rgba(100,250,100,${a})`:`rgba(167,139,250,${a})`);
     ctx.fillRect(((sx%W)+W)%W,sy,1.5,1.5);
   }
   const gY=H-48;
   for(let bx=-camX*0.3%96;bx<W;bx+=96){
-    ctx.fillStyle='#1a0a2e';
-    ctx.fillRect(bx,gY-40,80,60);
-    ctx.fillStyle='#2d1055';
-    ctx.fillRect(bx+8,gY-32,64,52);
+    ctx.fillStyle=isLava?'#2e0a0a':(isBoss?'#0a2e0a':'#1a0a2e'); ctx.fillRect(bx,gY-40,80,60);
+    ctx.fillStyle=isLava?'#551010':(isBoss?'#105510':'#2d1055'); ctx.fillRect(bx+8,gY-32,64,52);
   }
 }
 
 function drawPlatform(x,y,w,camX){
   const sx=x-camX;
-  ctx.fillStyle='#3d1a6e'; ctx.fillRect(sx,y,w,16);
-  ctx.fillStyle='#7c3aed'; ctx.fillRect(sx,y,w,3);
-  ctx.fillStyle='#2d1055'; ctx.fillRect(sx,y+3,w,13);
-  for(let i=0;i<w;i+=16){ ctx.fillStyle='#4a1d96'; ctx.fillRect(sx+i,y+3,1,13); }
+  const isLava = x > 800 && x < 2100;
+  ctx.fillStyle=isLava?'#b91c1c':'#3d1a6e'; ctx.fillRect(sx,y,w,16);
+  ctx.fillStyle=isLava?'#f87171':'#7c3aed'; ctx.fillRect(sx,y,w,3);
+  ctx.fillStyle=isLava?'#7f1d1d':'#2d1055'; ctx.fillRect(sx,y+3,w,13);
+  for(let i=0;i<w;i+=16){ ctx.fillStyle=isLava?'#991b1b':'#4a1d96'; ctx.fillRect(sx+i,y+3,1,13); }
 }
 
 function drawGround(camX){
   const gY=H-32;
-  ctx.fillStyle='#2d1055'; ctx.fillRect(0,gY,W,32);
-  ctx.fillStyle='#7c3aed'; ctx.fillRect(0,gY,W,3);
+  const isLava = camX > 800 && camX < 2100;
+  ctx.fillStyle=isLava?'#7f1d1d':'#2d1055'; ctx.fillRect(0,gY,W,32);
+  ctx.fillStyle=isLava?'#ef4444':'#7c3aed'; ctx.fillRect(0,gY,W,3);
   for(let i=(-camX%32+32)%32;i<W;i+=32){
-    ctx.fillStyle='#3d1a6e'; ctx.fillRect(i,gY+3,16,29);
+    ctx.fillStyle=isLava?'#b91c1c':'#3d1a6e'; ctx.fillRect(i,gY+3,16,29);
   }
 }
 
@@ -221,31 +230,34 @@ function drawFlag(x,y,camX){
 const WORLD_LEN = 3000;
 const PLATFORMS = [
   {x:300,y:H-120,w:96},{x:480,y:H-160,w:80},{x:640,y:H-100,w:112},
-  {x:820,y:H-170,w:80},{x:960,y:H-130,w:96},{x:1100,y:H-180,w:80},
-  {x:1250,y:H-140,w:96},{x:1400,y:H-110,w:80},{x:1550,y:H-170,w:112},
-  {x:1700,y:H-130,w:80},{x:1850,y:H-160,w:96},{x:2000,y:H-110,w:80},
+  // LAVA ZONE (800 - 2100) - Need ample platforms
+  {x:820,y:H-140,w:140},{x:1020,y:H-180,w:96},{x:1160,y:H-120,w:80},
+  {x:1280,y:H-160,w:80},{x:1420,y:H-110,w:112},{x:1580,y:H-170,w:96},
+  {x:1720,y:H-130,w:96},{x:1860,y:H-180,w:80},{x:2000,y:H-110,w:140},
+  // BOSS ZONE (2100+)
   {x:2200,y:H-170,w:112},{x:2400,y:H-140,w:80},{x:2600,y:H-120,w:96},
 ];
 const COINS_DEF = [
   {x:320,y:H-145,e:'🦁'},{x:360,y:H-145,e:'👑'},{x:500,y:H-185,e:'🦇'},
-  {x:660,y:H-125,e:'🌊'},{x:840,y:H-195,e:'🚀'},{x:980,y:H-155,e:'❄️'},
-  {x:1120,y:H-205,e:'🕷️'},{x:1270,y:H-165,e:'💊'},{x:1420,y:H-135,e:'🏰'},
-  {x:1570,y:H-195,e:'🦕'},{x:1720,y:H-155,e:'☠️'},{x:1870,y:H-185,e:'🤖'},
-  {x:2020,y:H-135,e:'🧙'},{x:2220,y:H-195,e:'🌹'},{x:2420,y:H-165,e:'🔥'},
-  {x:2620,y:H-145,e:'⭐'},
+  {x:660,y:H-125,e:'🌊'},{x:840,y:H-195,e:'🚀'},{x:940,y:H-195,e:'🔥'},
+  {x:1040,y:H-205,e:'🕷️'},{x:1180,y:H-155,e:'💊'},{x:1300,y:H-195,e:'🏰'},
+  {x:1440,y:H-135,e:'🦕'},{x:1600,y:H-195,e:'☠️'},{x:1740,y:H-155,e:'🤖'},
+  {x:1880,y:H-205,e:'🧙'},{x:2020,y:H-135,e:'🌹'},{x:2220,y:H-195,e:'❄️'},
+  {x:2420,y:H-165,e:'⭐'},
 ];
 const ENEMIES_DEF = [
   {x:450,type:'ghost'},{x:750,type:'skull'},{x:1050,type:'ghost'},
   {x:1350,type:'skull'},{x:1650,type:'ghost'},{x:1950,type:'skull'},
-  {x:2250,type:'ghost'},{x:2550,type:'skull'},
 ];
 
-let hero, coins, enemies, camX, frame, score, lives, ticks, attackTimer, invincTimer, gameOver, won, particles;
+let hero, coins, enemies, bosses, projectiles, camX, frame, score, lives, ticks, attackTimer, invincTimer, gameOver, won, particles;
 
 function initGame(){
   hero={x:60,y:H-100,vx:0,vy:0,onGround:false,dir:1,mode:'idle',dead:false,coyoteTime:0};
   coins=[...COINS_DEF.map(c=>({...c,collected:false}))];
   enemies=[...ENEMIES_DEF.map(e=>({...e,vx:-1,alive:true,startX:e.x}))];
+  bosses=[{x: 2700, y: H-120, hp: 8, t: 0, shootTimer: 80, alive: true, startY: H-120}];
+  projectiles=[];
   camX=0; frame=0; score=0; lives=3; ticks=0; attackTimer=0; invincTimer=0; gameOver=false; won=false; particles=[];
   updateHUD();
 }
@@ -272,7 +284,12 @@ function update(){
 
   const HW=16*SC, HH=18*SC;
   const gY=H-32;
-  if(hero.y+HH>=gY){hero.y=gY-HH;hero.vy=0;hero.onGround=true;}
+  const inLavaZone = hero.x > 800 && hero.x < 2100;
+  
+  if(hero.y+HH>=gY){
+     if(inLavaZone && !hero.dead && invincTimer===0) { lives--; invincTimer=60; hero.vy=-8; updateHUD(); if(lives<=0) gameOver=true; }
+     else { hero.y=gY-HH;hero.vy=0;hero.onGround=true; }
+  }
   else{ if(hero.onGround) hero.coyoteTime=8; else if(hero.coyoteTime>0) hero.coyoteTime--; hero.onGround=false;}
 
   PLATFORMS.forEach(pl=>{
@@ -319,6 +336,40 @@ function update(){
     if(overlap && attackTimer>0){ e.alive=false; score+=100; spawnParticles(e.x,e.y,'#a78bfa',12); updateHUD(); }
   });
 
+  bosses.forEach(b=>{
+    if(!b.alive) return;
+    b.t++;
+    b.y = b.startY + Math.sin(b.t*0.05)*40;
+    b.shootTimer--;
+    if(b.shootTimer<=0 && b.x-hero.x<600) {
+      b.shootTimer = 70;
+      projectiles.push({x:b.x, y:b.y+20, vx:-4, vy:0, life:300, type:'fireball'});
+    }
+    const hx=hero.x+4, hy=hero.y+4, hw2=HW-8, hh2=HH-8;
+    const overlap=hx<b.x+64 && hx+hw2>b.x && hy<b.y+64 && hy+hh2>b.y;
+    if(overlap && invincTimer===0 && attackTimer===0){
+      lives-=2; invincTimer=60; hero.vy=-6; hero.vx=-4; updateHUD();
+      if(lives<=0) gameOver=true;
+    }
+    if(overlap && attackTimer>0 && invincTimer===0){
+      b.hp--; hero.vy=-4; hero.vx=-4; invincTimer=20; spawnParticles(b.x+32,b.y+32,'#ef4444',15);
+      if(b.hp<=0){ b.alive=false; score+=1000; spawnParticles(b.x+32,b.y+32,'#fbbf24',50); updateHUD(); }
+    }
+  });
+
+  projectiles=projectiles.filter(p=>p.life>0);
+  projectiles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.life--;
+    p.life-=0.1;
+    const hx=hero.x+4, hy=hero.y+4, hw2=HW-8, hh2=HH-8;
+    const overlap=hx<p.x+16 && hx+hw2>p.x && hy<p.y+16 && hy+hh2>p.y;
+    if(overlap && invincTimer===0 && attackTimer===0){
+      lives--; invincTimer=60; updateHUD(); p.life=0;
+      if(lives<=0) gameOver=true;
+    }
+    if(overlap && attackTimer>0){ p.life=0; score+=20; spawnParticles(p.x+8,p.y+8,'#fbbf24',5); updateHUD(); }
+  });
+
   particles=particles.filter(p=>p.life>0);
   particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.2;p.life--;});
 
@@ -333,6 +384,11 @@ function render(){
   drawFlag(WORLD_LEN-80,H-32,camX);
   coins.forEach(c=>{ if(!c.collected) drawCoin(c.x-camX,c.y,ticks,c.e); });
   enemies.forEach(e=>{ if(e.alive) drawEnemy(e.x-camX,e.y-8*SC,ticks,e.type); });
+  projectiles.forEach(p=>{
+    ctx.fillStyle='#fbbf24'; ctx.fillRect(p.x-camX,p.y,16,16);
+    ctx.fillStyle='#ef4444'; ctx.fillRect(p.x-camX+2,p.y+2,12,12);
+  });
+  bosses.forEach(b=>{ if(b.alive) drawBoss(b,camX); });
 
   particles.forEach(p=>{
     const a=p.life/30;
@@ -349,7 +405,7 @@ function render(){
     ctx.fillStyle='#f87171'; ctx.font='bold 32px Courier New'; ctx.textAlign='center';
     ctx.fillText('GAME OVER',W/2,H/2-20);
     ctx.fillStyle='#c4b5fd'; ctx.font='14px Courier New';
-    ctx.fillText('SPOILERON WINS... tap/click to exit',W/2,H/2+16);
+    ctx.fillText('SPOILERON WINS... tap to exit',W/2,H/2+16);
     ctx.textAlign='left';
   }
   if(won){
@@ -359,7 +415,7 @@ function render(){
     ctx.fillStyle='#4ade80'; ctx.font='14px Courier New';
     ctx.fillText(`SCORE: ${score}  COINS: ${coins.filter(c=>c.collected).length}/${coins.length}`,W/2,H/2+8);
     ctx.fillStyle='#c4b5fd'; ctx.font='14px Courier New';
-    ctx.fillText('tap/click to claim double aura',W/2,H/2+32);
+    ctx.fillText('tap to exit and claim aura',W/2,H/2+32);
     ctx.textAlign='left';
   }
 }
