@@ -507,14 +507,19 @@
       <div class="logo">Cine<span>Emoji</span></div>
       <div class="tagline">Infinite AI Movie Logic</div>
     </div>
-    <div style="display:flex; gap:12px; align-items:center;">
-      <button class="theme-toggle" id="profile-btn" onclick="showProfiles()" aria-label="Profiles" style="font-size: 1rem; width:auto; padding:0 12px; border-radius:12px;">👤 <span id="current-player-name" style="font-family: Outfit; font-weight:600;">Guest</span></button>
-      <div id="aura-display" style="font-weight:600; font-size:1.1rem; background:var(--surface); padding:8px 16px; border-radius:20px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.05); color:var(--text); transition:all 0.3s; z-index: 10;">✨ Aura: 0</div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <div id="aura-display" style="font-weight:600; font-size:clamp(0.9rem, 3vw, 1.1rem); background:var(--surface); padding:8px 12px; border-radius:20px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.05); color:var(--text); transition:all 0.3s; z-index: 10; white-space: nowrap;">✨ Aura: 0</div>
       <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
         🌙
       </button>
     </div>
   </header>
+
+  <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 16px;">
+    <button class="theme-toggle" id="profile-btn" onclick="showProfiles()" aria-label="Profiles" style="background: rgba(0,0,0,0.85); border: 2px solid #39ff14; color: #39ff14; font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; width: 100%; max-width: 320px; padding: 10px 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); transition: all 0.3s; height: 44px; display: flex; align-items: center; justify-content: center; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; font-weight: bold;">
+      <span id="current-player-name">👤 GUEST</span>
+    </button>
+  </div>
 
   <div class="glass-panel scorebar">
     <div class="score-item">
@@ -739,9 +744,31 @@ function loadUser(name) {
   state.aura = usersData[name].aura || 0;
   state.playedMovies = usersData[name].playedMovies || [];
   
-  document.getElementById('current-player-name').innerText = name;
+  document.getElementById('current-player-name').innerText = `👤 ${name}`;
   document.getElementById('retro-login').classList.add('layer-hidden');
   updateAuraDisplay();
+  
+  startProfileAnimation(name);
+}
+
+let profileAnimLoop;
+function startProfileAnimation(name) {
+  clearInterval(profileAnimLoop);
+  let step = 0;
+  const frames = [
+    `👤 ${name}`, `👤 ${name}`, `👤 ${name}`, 
+    `👾 ( •_•)>⌐■-■`,
+    `👾 (⌐■_■)`,
+    `🔫 (⌐■_■)`,
+    `🕹️ 🎮 👾 `,
+    `🥷 💨    `
+  ];
+  
+  profileAnimLoop = setInterval(() => {
+    step = (step + 1) % frames.length;
+    const el = document.getElementById('current-player-name');
+    if (el) el.innerText = frames[step];
+  }, 1000);
 }
 
 function saveUserProgress() {
