@@ -489,6 +489,21 @@
 </head>
 <body>
 
+<div id="bonus-offer-modal" class="retro-overlay layer-hidden" style="z-index: 15000;">
+  <div class="modal-content" style="background:#1a0a2e; border:4px solid #fbbf24; border-radius:12px; padding:30px; text-align:center; max-width:400px; box-shadow: 0 0 30px rgba(251,191,36,0.3);">
+     <h2 style="color:#fbbf24; text-shadow:0 0 10px #fbbf24; font-size:1.8rem; margin-bottom:20px;">🌟 15 STREAK BOSS! 🌟</h2>
+     <p style="color:#c4b5fd; font-family:'Courier New', monospace; font-size:1.1rem; margin-bottom:20px;">Play the 8-Bit Boss Level to <strong style="color:#fbbf24;">DOUBLE</strong> your total Aura!<br><br><span style="color:#f87171; font-size:0.9rem;">Warning: If you decline, your streak breaks.</span></p>
+     <div style="display:flex; gap:16px; justify-content:center;">
+        <button class="retro-btn" style="border-color:#4ade80; color:#4ade80; min-width:auto; width:100%; font-size:1rem;" onclick="startBonusGame()">YES, PLAY</button>
+        <button class="retro-btn" style="border-color:#f87171; color:#f87171; min-width:auto; width:100%; font-size:1rem;" onclick="declineBonusGame()">NO THANKS</button>
+     </div>
+  </div>
+</div>
+
+<div id="minigame-container" class="layer-hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0010; z-index:20000;">
+  <iframe src="/minigame.html" id="minigame-frame" style="width:100%; height:100%; border:none;"></iframe>
+</div>
+
 <div id="retro-login" class="retro-overlay layer-hidden">
   <div class="modal-content">
     <h2>INSERT COIN<br><br>SELECT PLAYER</h2>
@@ -1169,8 +1184,15 @@ function endRound(win, reason) {
   updateScoreUI();
   saveUserProgress();
   
-  document.getElementById('next-btn').classList.remove('layer-hidden');
-  document.getElementById('menu-btn').classList.remove('layer-hidden');
+  if (state.streak === 15) {
+     setTimeout(() => {
+        sfx.win();
+        document.getElementById('bonus-offer-modal').classList.remove('layer-hidden');
+     }, 1000);
+  } else {
+     document.getElementById('next-btn').classList.remove('layer-hidden');
+     document.getElementById('menu-btn').classList.remove('layer-hidden');
+  }
 }
 
 function updateScoreUI() {
@@ -1198,6 +1220,51 @@ function toggleGameButtons(active) {
 
 document.getElementById('guess-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitTypeGuess();
+});
+
+// --- Bonus Game Logic ---
+function declineBonusGame() {
+  sfx.click();
+  document.getElementById('bonus-offer-modal').classList.add('layer-hidden');
+  
+  state.streak = 0; 
+  updateScoreUI();
+  saveUserProgress();
+  
+  document.getElementById('next-btn').classList.remove('layer-hidden');
+  document.getElementById('menu-btn').classList.remove('layer-hidden');
+}
+
+function startBonusGame() {
+  sfx.click();
+  document.getElementById('bonus-offer-modal').classList.add('layer-hidden');
+  document.getElementById('minigame-frame').src = '/minigame.html';
+  document.getElementById('minigame-container').classList.remove('layer-hidden');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'BONUS_GAME_RESULT') {
+     document.getElementById('minigame-container').classList.add('layer-hidden');
+     
+     if (event.data.won) {
+         updateAura(state.aura); 
+         const fb = document.getElementById('feedback');
+         fb.className = 'feedback correct';
+         fb.innerHTML = `🌟 BOSS DEFEATED! AURA DOUBLED! 🌟`;
+         celebrate(); 
+     } else {
+         const fb = document.getElementById('feedback');
+         fb.className = 'feedback wrong';
+         fb.innerHTML = `💀 BOSS FAILED. STREAK LOST.`;
+     }
+     
+     state.streak = 0;
+     updateScoreUI();
+     saveUserProgress();
+     
+     document.getElementById('next-btn').classList.remove('layer-hidden');
+     document.getElementById('menu-btn').classList.remove('layer-hidden');
+  }
 });
 
 // Boot up the profile system!
