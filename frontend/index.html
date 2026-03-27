@@ -516,8 +516,9 @@
   </header>
 
   <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 16px;">
-    <button class="theme-toggle" id="profile-btn" onclick="showProfiles()" aria-label="Profiles" style="background: rgba(0,0,0,0.85); border: 2px solid #39ff14; color: #39ff14; font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; width: 100%; max-width: 320px; padding: 10px 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); transition: all 0.3s; height: 44px; display: flex; align-items: center; justify-content: center; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; font-weight: bold;">
-      <span id="current-player-name">👤 GUEST</span>
+    <button class="theme-toggle" id="profile-btn" onclick="showProfiles()" aria-label="Profiles" style="background: rgba(0,0,0,0.85); border: 2px solid #39ff14; color: #39ff14; font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; width: 100%; max-width: 320px; padding: 4px 16px; border-radius: 8px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); transition: all 0.3s; height: 50px; display: flex; align-items: center; justify-content: center; gap: 12px; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; font-weight: bold;">
+      <canvas id="mini-char-canvas" width="32" height="48" style="image-rendering: crisp-edges; image-rendering: pixelated; width: 32px; height: 48px;"></canvas>
+      <span id="current-player-name">GUEST</span>
     </button>
   </div>
 
@@ -751,24 +752,96 @@ function loadUser(name) {
   startProfileAnimation(name);
 }
 
-let profileAnimLoop;
-function startProfileAnimation(name) {
-  clearInterval(profileAnimLoop);
-  let step = 0;
-  const frames = [
-    `👤 ${name}`, `👤 ${name}`, `👤 ${name}`, 
-    `👾 ( •_•)>⌐■-■`,
-    `👾 (⌐■_■)`,
-    `🔫 (⌐■_■)`,
-    `🕹️ 🎮 👾 `,
-    `🥷 💨    `
-  ];
+const CHAR_PAL = {
+  skin: '#f5c098', hair: '#3b1f0a', shirt: '#e05c5c', pants: '#2563eb', shoes: '#1e1040',
+  belt: '#92400e', eye: '#1e1040', white: '#ffffff', cape: '#fbbf24', sword: '#94a3b8'
+};
+
+function drawMiniChar(ctx, frame, mode, jumpY) {
+  ctx.clearRect(0, 0, 32, 48);
+  const SCALE = 2;
+  const d = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x*SCALE, (y+jumpY)*SCALE, SCALE, SCALE); };
   
-  profileAnimLoop = setInterval(() => {
-    step = (step + 1) % frames.length;
-    const el = document.getElementById('current-player-name');
-    if (el) el.innerText = frames[step];
-  }, 1000);
+  [[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4]].forEach(([x,y])=>d(x,y,CHAR_PAL.skin));
+  [[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[2,1],[3,1],[4,1],[12,1],[13,1],[2,2],[3,2],[13,2]].forEach(([x,y])=>d(x,y,CHAR_PAL.hair));
+  d(5,3,CHAR_PAL.eye); d(6,3,CHAR_PAL.eye); d(9,3,CHAR_PAL.eye); d(10,3,CHAR_PAL.eye);
+  d(5,2,CHAR_PAL.white); d(6,2,CHAR_PAL.white); d(9,2,CHAR_PAL.white); d(10,2,CHAR_PAL.white);
+  if(mode==='attack') { d(6,4,CHAR_PAL.hair); d(7,4,CHAR_PAL.hair); d(8,4,CHAR_PAL.hair); d(9,4,CHAR_PAL.hair); } else if(mode==='jump') { d(7,4,CHAR_PAL.hair); d(8,4,CHAR_PAL.hair); d(6,4,CHAR_PAL.skin); d(9,4,CHAR_PAL.skin); } else { d(6,4,CHAR_PAL.hair); d(9,4,CHAR_PAL.hair); }
+  d(7,5,CHAR_PAL.skin); d(8,5,CHAR_PAL.skin);
+  const bodyRows = [[4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9]];
+  bodyRows.forEach(([x,y])=>d(x,y,CHAR_PAL.shirt));
+  [[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],[10,10],[11,10]].forEach(([x,y])=>d(x,y,CHAR_PAL.belt));
+  d(7,10,CHAR_PAL.white); d(8,10,CHAR_PAL.white);
+  
+  const legF = Math.floor(frame % 4);
+  let lArmY=0, rArmY=0;
+  if(mode==='walk'||mode==='run'){ lArmY = legF<2?1:-1; rArmY = legF<2?-1:1; } else if(mode==='attack'){ rArmY = -3; } else if(mode==='idle'){ lArmY = frame%8<4?0:1; rArmY = frame%8<4?0:1; }
+  
+  [[2,6],[3,6],[2,7],[3,7],[2,8],[3,8]].forEach(([x,y])=>d(x,y+lArmY,CHAR_PAL.shirt));
+  [[2,9],[3,9]].forEach(([x,y])=>d(x,y+lArmY,CHAR_PAL.skin));
+  [[12,6],[13,6],[12,7],[13,7],[12,8],[13,8]].forEach(([x,y])=>d(x,y+rArmY,CHAR_PAL.shirt));
+  [[12,9],[13,9]].forEach(([x,y])=>d(x,y+rArmY,CHAR_PAL.skin));
+  if(mode==='attack'){ for(let i=0;i<6;i++) d(14+i, 6-i, CHAR_PAL.sword); d(14,7,CHAR_PAL.sword); d(15,6,CHAR_PAL.cape); }
+  [[12,6],[12,7],[12,8],[13,6],[13,7],[13,8],[14,6],[14,7]].forEach(([x,y])=>{ if(mode!=='attack') d(x,y,CHAR_PAL.cape); });
+  
+  [[4,11],[5,11],[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[4,12],[5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[4,13],[5,13],[6,13],[7,13],[8,13],[9,13],[10,13],[11,13]].forEach(([x,y])=>d(x,y,CHAR_PAL.pants));
+  let lLegX=0, rLegX=0, lLegY=0, rLegY=0;
+  if(mode==='walk'){ lLegX = legF<2?-1:1; rLegX = legF<2?1:-1; } else if(mode==='run'){ lLegX = legF<2?-2:2; rLegX = legF<2?2:-2; lLegY = legF===1||legF===3?-1:0; rLegY = legF===0||legF===2?-1:0; } else if(mode==='jump'){ lLegX = -1; rLegX = 1; lLegY = -2; rLegY = -2; } else if(mode==='idle'){ lLegY = frame%16<8?0:1; rLegY = frame%16<8?0:1; }
+  [[4,14],[5,14],[6,14]].forEach(([x,y])=>d(x+lLegX,y+lLegY,CHAR_PAL.pants));
+  [[4,15],[5,15],[6,15],[4,16],[5,16],[6,16]].forEach(([x,y])=>d(x+lLegX,y+lLegY,CHAR_PAL.pants));
+  [[4,17],[5,17],[6,17]].forEach(([x,y])=>d(x+lLegX,y+lLegY,CHAR_PAL.shoes));
+  [[9,14],[10,14],[11,14]].forEach(([x,y])=>d(x+rLegX,y+rLegY,CHAR_PAL.pants));
+  [[9,15],[10,15],[11,15],[9,16],[10,16],[11,16]].forEach(([x,y])=>d(x+rLegX,y+rLegY,CHAR_PAL.pants));
+  [[9,17],[10,17],[11,17]].forEach(([x,y])=>d(x+rLegX,y+rLegY,CHAR_PAL.shoes));
+}
+
+let miniCharMode = 'idle';
+let miniCharJumpY = 0;
+let isMiniJumping = false;
+let miniJumpVel = 0;
+let modeTimer = 0;
+let lastAnimT = performance.now();
+let miniAnimRequest;
+
+function startProfileAnimation(name) {
+  document.getElementById('current-player-name').innerText = name;
+  if (miniAnimRequest) cancelAnimationFrame(miniAnimRequest);
+  
+  function loopMiniChar(t) {
+    const dt = t - lastAnimT;
+    lastAnimT = t;
+    
+    const speedMs = miniCharMode==='run' ? 60 : miniCharMode==='idle' ? 150 : miniCharMode==='attack' ? 80 : 100;
+    const frame = Math.floor(t / speedMs);
+    
+    modeTimer += dt;
+    if(modeTimer > 3000) {
+      modeTimer = 0;
+      const modes = ['walk', 'run', 'idle', 'jump', 'attack'];
+      miniCharMode = modes[Math.floor(Math.random() * modes.length)];
+      if(miniCharMode === 'jump' && !isMiniJumping) {
+        isMiniJumping = true;
+        miniJumpVel = -3; 
+      }
+    }
+
+    if(isMiniJumping){
+      miniCharJumpY += miniJumpVel;
+      miniJumpVel += 0.3;
+      if(miniCharJumpY >= 0){ miniCharJumpY=0; miniJumpVel=0; isMiniJumping=false; if(miniCharMode==='jump') miniCharMode='idle'; }
+    }
+
+    const canvas = document.getElementById('mini-char-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      drawMiniChar(ctx, frame, miniCharMode, Math.round(miniCharJumpY));
+    }
+    
+    miniAnimRequest = requestAnimationFrame(loopMiniChar);
+  }
+  
+  lastAnimT = performance.now();
+  miniAnimRequest = requestAnimationFrame(loopMiniChar);
 }
 
 function saveUserProgress() {
