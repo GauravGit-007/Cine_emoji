@@ -568,8 +568,41 @@ let state = {
   words: [],
   revealedWords: [],
   gameOver: true,
-  playedMovies: []
+  playedMovies: [],
+  aura: parseInt(localStorage.getItem('auraPoints') || '0', 10)
 };
+
+function updateAura(amount) {
+  state.aura += amount;
+  localStorage.setItem('auraPoints', state.aura);
+  document.getElementById('aura-display').innerText = `✨ Aura: ${state.aura}`;
+  
+  // Flash effect
+  const d = document.getElementById('aura-display');
+  d.style.transform = 'scale(1.1)';
+  d.style.color = amount > 0 ? '#10b981' : '#ef4444';
+  setTimeout(() => {
+    d.style.transform = 'scale(1)';
+    d.style.color = 'var(--primary)';
+  }, 300);
+}
+
+document.getElementById('aura-display').innerText = `✨ Aura: ${state.aura}`;
+
+function celebrate() {
+  const emojis = ['🎉', '🎥', '🍿', '🎬', '✨', '🏆', '🔥'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'reaction-emoji';
+    el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 20 + 80) + 'vh';
+    el.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
 
 function initTypeHintBox() {
   const box = document.getElementById('title-hint-box');
