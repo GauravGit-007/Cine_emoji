@@ -777,19 +777,8 @@ let BACKEND_URL = null;
 async function getBackendUrl() {
   if (BACKEND_URL) return BACKEND_URL;
   
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    BACKEND_URL = 'http://localhost:8000';
-    return BACKEND_URL;
-  }
-  
-  try {
-    const res = await fetch('/api/config');
-    const data = await res.json();
-    BACKEND_URL = data.BACKEND_URL;
-  } catch(e) {
-    console.warn("Failed to fetch /api/config. Using fallback.");
-    BACKEND_URL = 'http://localhost:8000';
-  }
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  BACKEND_URL = isLocal ? 'http://localhost:8000' : '';
   return BACKEND_URL;
 }
 
@@ -835,7 +824,7 @@ async function startGame() {
   const excludedList = state.playedMovies.join(', ');
   try {
     const url = await getBackendUrl();
-    const resp = await fetch(`${url}/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}&exclude=${encodeURIComponent(excludedList)}`);
+    const resp = await fetch(`${url}/api/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}&exclude=${encodeURIComponent(excludedList)}`);
     if(!resp.ok) throw new Error("Server Failed");
     const data = await resp.json();
     

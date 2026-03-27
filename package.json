@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prestart": "npx kill-port 8000 3000",
-    "start": "concurrently \"python backend/main.py\" \"serve frontend -p 3000\""
+    "start": "concurrently \"python -m uvicorn api.index:app --port 8000\" \"serve frontend -p 3000\""
   },
   "keywords": [],
   "author": "",

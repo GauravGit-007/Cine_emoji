@@ -28,12 +28,12 @@ client = OpenAI(
     api_key=os.getenv("NVIDIA_API_KEY")
 )
 
-@app.get("/")
+@app.get("/api")
 @limiter.limit("30/minute")
 def read_root(request: Request):
-    return {"status": "Online!", "message": "Cine Emoji Backend is awake and ready!"}
+    return {"status": "Online!", "message": "Cine Emoji Serverless is awake and ready!"}
 
-@app.get("/generate_movie")
+@app.get("/api/generate_movie")
 @limiter.limit("20/minute")
 def generate_movie(request: Request, category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
     exclude_text = f" CRITICAL RULE: DO NOT generate any of the following movies: {exclude}. Pick something completely different!" if exclude else ""
