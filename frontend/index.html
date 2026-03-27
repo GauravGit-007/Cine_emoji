@@ -553,6 +553,44 @@
 </div>
 
 <script>
+// --- Audio SFX ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playTone(freq, type, duration, vol=0.1) {
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+const sfx = {
+  win: () => {
+    playTone(440, 'sine', 0.1);
+    setTimeout(() => playTone(554, 'sine', 0.1), 100);
+    setTimeout(() => playTone(659, 'sine', 0.1), 200);
+    setTimeout(() => playTone(880, 'sine', 0.4), 300);
+  },
+  wrong: () => {
+    playTone(150, 'square', 0.2, 0.05);
+    setTimeout(() => playTone(100, 'square', 0.3, 0.05), 100);
+  },
+  lose: () => {
+    playTone(300, 'triangle', 0.3);
+    setTimeout(() => playTone(250, 'triangle', 0.4), 200);
+    setTimeout(() => playTone(200, 'triangle', 0.8), 400);
+  },
+  tick: () => playTone(800, 'sine', 0.05, 0.05),
+  click: () => playTone(600, 'sine', 0.05, 0.05)
+};
+
 // --- Theme Handling ---
 const themeBtn = document.getElementById('theme-btn');
 const root = document.documentElement;
@@ -657,6 +695,7 @@ function initMCQGrid() {
 
 function useHint() {
   if(state.gameOver) return;
+  sfx.click();
   
   // Deduct Aura points for using hints!
   updateAura(-10);
@@ -722,6 +761,7 @@ async function getBackendUrl() {
 
 // ... unchanged logic inside startGame ...
 async function startGame() {
+  sfx.click();
   document.getElementById('config-ui').classList.add('layer-hidden');
   document.getElementById('game-ui').classList.remove('layer-hidden');
   
@@ -785,6 +825,7 @@ async function startGame() {
     state.timerInterval = setInterval(() => {
       state.timeLeft--;
       updateTimerUI();
+      if(state.timeLeft <= 5 && state.timeLeft > 0) sfx.tick();
       if(state.timeLeft <= 0) {
         endRound(false, "⏰ Time's Up!");
       }
@@ -819,6 +860,7 @@ function handleGuessValidation(guess) {
   if(exact) {
     endRound(true, "Correct!");
   } else {
+    sfx.wrong();
     // Show wrong feedback momentarily
     document.getElementById('guess-input').value = '';
     const fb = document.getElementById('feedback');
@@ -866,6 +908,7 @@ function endRound(win, reason) {
 
   const fb = document.getElementById('feedback');
   if(win) {
+    sfx.win();
     const streakBonus = state.streak * 20;
     const timeBonus = state.timeLeft * 2;
     const roundScore = 100 + streakBonus + timeBonus;
