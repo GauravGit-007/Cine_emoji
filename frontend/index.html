@@ -573,22 +573,46 @@ function playTone(freq, type, duration, vol=0.1) {
 
 const sfx = {
   win: () => {
-    playTone(440, 'sine', 0.1);
-    setTimeout(() => playTone(554, 'sine', 0.1), 100);
-    setTimeout(() => playTone(659, 'sine', 0.1), 200);
-    setTimeout(() => playTone(880, 'sine', 0.4), 300);
+    if (isDark) {
+      playTone(220, 'sine', 0.2);
+      setTimeout(() => playTone(277, 'sine', 0.2), 150);
+      setTimeout(() => playTone(329, 'sine', 0.2), 300);
+      setTimeout(() => playTone(440, 'sine', 0.6), 450);
+    } else {
+      playTone(440, 'sine', 0.1);
+      setTimeout(() => playTone(554, 'sine', 0.1), 100);
+      setTimeout(() => playTone(659, 'sine', 0.1), 200);
+      setTimeout(() => playTone(880, 'sine', 0.4), 300);
+    }
   },
   wrong: () => {
-    playTone(150, 'square', 0.2, 0.05);
-    setTimeout(() => playTone(100, 'square', 0.3, 0.05), 100);
+    if (isDark) {
+      playTone(100, 'sine', 0.3, 0.05);
+      setTimeout(() => playTone(80, 'sine', 0.4, 0.05), 150);
+    } else {
+      playTone(150, 'square', 0.2, 0.05);
+      setTimeout(() => playTone(100, 'square', 0.3, 0.05), 100);
+    }
   },
   lose: () => {
-    playTone(300, 'triangle', 0.3);
-    setTimeout(() => playTone(250, 'triangle', 0.4), 200);
-    setTimeout(() => playTone(200, 'triangle', 0.8), 400);
+    if (isDark) {
+      playTone(200, 'sine', 0.4);
+      setTimeout(() => playTone(150, 'sine', 0.5), 300);
+      setTimeout(() => playTone(100, 'sine', 1.0), 600);
+    } else {
+      playTone(300, 'triangle', 0.3);
+      setTimeout(() => playTone(250, 'triangle', 0.4), 200);
+      setTimeout(() => playTone(200, 'triangle', 0.8), 400);
+    }
   },
-  tick: () => playTone(800, 'sine', 0.05, 0.05),
-  click: () => playTone(600, 'sine', 0.05, 0.05)
+  tick: () => {
+    if(isDark) playTone(400, 'sine', 0.1, 0.05);
+    else playTone(800, 'sine', 0.05, 0.05);
+  },
+  click: () => {
+    if(isDark) playTone(300, 'sine', 0.1, 0.05);
+    else playTone(600, 'sine', 0.05, 0.05);
+  }
 };
 
 // --- Theme Handling ---
@@ -599,6 +623,15 @@ let isDark = false;
 root.removeAttribute('data-theme');
 themeBtn.innerText = '🌙';
 
+function getPointsName() {
+  return isDark ? '🌌 Zen' : '✨ Aura';
+}
+
+function updateAuraDisplay() {
+  const el = document.getElementById('aura-display');
+  if(el) el.innerText = `${getPointsName()}: ${state.aura}`;
+}
+
 function toggleTheme() {
   isDark = !isDark;
   if(isDark) {
@@ -608,6 +641,7 @@ function toggleTheme() {
     root.removeAttribute('data-theme');
     themeBtn.innerText = '🌙';
   }
+  updateAuraDisplay();
 }
 // ----------------------
 
@@ -630,7 +664,7 @@ let state = {
 function updateAura(amount) {
   state.aura += amount;
   localStorage.setItem('auraPoints', state.aura);
-  document.getElementById('aura-display').innerText = `✨ Aura: ${state.aura}`;
+  updateAuraDisplay();
   
   // Flash effect
   const d = document.getElementById('aura-display');
@@ -642,7 +676,7 @@ function updateAura(amount) {
   }, 300);
 }
 
-document.getElementById('aura-display').innerText = `✨ Aura: ${state.aura}`;
+updateAuraDisplay();
 
 function celebrate() {
   const emojis = ['🎉', '🎥', '🍿', '🎬', '✨', '🏆', '🔥'];
@@ -920,7 +954,7 @@ function endRound(win, reason) {
     
     // Inject bonus text after a micro delay to ensure fb is rendered
     setTimeout(() => {
-        fb.innerHTML += `<br/><small style="color:var(--accent); font-size: 0.9rem">+${roundScore} Aura Points!</small>`;
+        fb.innerHTML += `<br/><small style="color:var(--accent); font-size: 0.9rem">+${roundScore} ${getPointsName()} Points!</small>`;
     }, 50);
     state.streak++;
     fb.className = 'feedback correct';
