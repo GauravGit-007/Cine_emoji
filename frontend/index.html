@@ -590,6 +590,7 @@
       </div>
     </div>
     <button class="btn btn-primary" style="font-size: 18px; padding: 20px" onclick="startGame()">▶ GENERATE & PLAY</button>
+    <button class="btn btn-ghost" style="margin-top: 12px; border-color: #fbbf24; color: #fbbf24; width: 100%; box-shadow: 0 0 10px rgba(251,191,36,0.2);" onclick="debugLaunchBoss()">🎮 TEST 15-STREAK BOSS</button>
   </div>
 
   <div class="glass-panel game-ui layer-hidden" id="game-ui">
@@ -1223,6 +1224,14 @@ document.getElementById('guess-input').addEventListener('keydown', e => {
 });
 
 // --- Bonus Game Logic ---
+function debugLaunchBoss() {
+  sfx.win();
+  state.streak = 15;
+  document.getElementById('config-ui').classList.add('layer-hidden');
+  document.getElementById('game-ui').classList.remove('layer-hidden');
+  document.getElementById('bonus-offer-modal').classList.remove('layer-hidden');
+}
+
 function declineBonusGame() {
   sfx.click();
   document.getElementById('bonus-offer-modal').classList.add('layer-hidden');
