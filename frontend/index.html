@@ -543,6 +543,11 @@
       <span class="score-value" id="score">0</span>
     </div>
     <div class="divider-v"></div>
+    <div class="score-item" style="color: #4ade80;">
+      <span class="score-label" id="round-label">Round 1</span>
+      <span class="score-value" id="round-tracker">0/10</span>
+    </div>
+    <div class="divider-v"></div>
     <div class="score-item">
       <span class="score-label">Time Left</span>
       <span class="score-value timer-box" id="timer">--</span>
@@ -555,7 +560,15 @@
   </div>
 
   <div class="glass-panel config-section" id="config-ui">
-    <div class="config-grid">
+      <div class="config-item">
+        <label>Round Length</label>
+        <select id="config-round">
+          <option value="10">10 Questions</option>
+          <option value="15">15 Questions</option>
+          <option value="20">20 Questions</option>
+          <option value="Endless">Endless</option>
+        </select>
+      </div>
       <div class="config-item">
         <label>Game Mode</label>
         <select id="config-mode">
@@ -589,7 +602,7 @@
         </select>
       </div>
     </div>
-    <button class="btn btn-primary" style="font-size: 18px; padding: 20px" onclick="startGame()">▶ GENERATE & PLAY</button>
+    <button class="btn btn-primary" style="font-size: 18px; padding: 20px" onclick="startNewRoundSystem()">▶ GENERATE & PLAY</button>
   </div>
 
   <div class="glass-panel game-ui layer-hidden" id="game-ui">
@@ -876,6 +889,9 @@ let state = {
   mode: 'TYPE', // 'TYPE' or 'MCQ'
   score: 0,
   streak: 0,
+  roundSize: 10,
+  currentQuestion: 0,
+  difficultyRound: 1,
   timerInterval: null,
   timeLeft: 0,
   movieTitle: "",
@@ -1010,6 +1026,17 @@ async function getBackendUrl() {
 }
 
 // ... unchanged logic inside startGame ...
+function startNewRoundSystem() {
+  const rConf = document.getElementById('config-round').value;
+  state.roundSize = rConf === 'Endless' ? 'Endless' : parseInt(rConf, 10);
+  state.currentQuestion = 0;
+  state.difficultyRound = 1;
+  state.score = 0;
+  state.streak = 0;
+  updateScoreUI();
+  startGame();
+}
+
 async function startGame() {
   sfx.click();
   document.getElementById('config-ui').classList.add('layer-hidden');
@@ -1050,8 +1077,10 @@ async function startGame() {
 
   const excludedList = state.playedMovies.join(', ');
   try {
+    state.currentQuestion++;
+    updateScoreUI();
     const url = await getBackendUrl();
-    const resp = await fetch(`${url}/api/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}&exclude=${encodeURIComponent(excludedList)}`);
+    const resp = await fetch(`${url}/api/generate_movie?category=${encodeURIComponent(cat)}&genre=${encodeURIComponent(gen)}&difficulty=${state.difficultyRound}&exclude=${encodeURIComponent(excludedList)}`);
     if(!resp.ok) throw new Error("Server Failed");
     const data = await resp.json();
     
@@ -1190,6 +1219,16 @@ function endRound(win, reason) {
         document.getElementById('bonus-offer-modal').classList.remove('layer-hidden');
      }, 1000);
   } else {
+     if (state.roundSize !== 'Endless' && state.currentQuestion >= state.roundSize) {
+         document.getElementById('next-btn').innerHTML = `🏆 ROUND ${state.difficultyRound} COMPLETE! NEXT ROUND ↗`;
+         document.getElementById('next-btn').onclick = () => {
+             state.currentQuestion = 0;
+             state.difficultyRound++;
+             document.getElementById('next-btn').innerHTML = `🎬 NEXT MOVIE`;
+             document.getElementById('next-btn').onclick = startGame;
+             startGame();
+         };
+     }
      document.getElementById('next-btn').classList.remove('layer-hidden');
      document.getElementById('menu-btn').classList.remove('layer-hidden');
   }
@@ -1198,6 +1237,13 @@ function endRound(win, reason) {
 function updateScoreUI() {
   document.getElementById('score').textContent = state.score;
   document.getElementById('streak').textContent = state.streak;
+  
+  const rt = document.getElementById('round-tracker');
+  const rl = document.getElementById('round-label');
+  if (rt && rl) {
+      rl.textContent = `Round ${state.difficultyRound}`;
+      rt.textContent = state.roundSize === 'Endless' ? `∞` : `${state.currentQuestion}/${state.roundSize}`;
+  }
 }
 
 function updateTimerUI() {

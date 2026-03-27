@@ -35,9 +35,18 @@ def read_root(request: Request):
 
 @app.get("/api/generate_movie")
 @limiter.limit("20/minute")
-def generate_movie(request: Request, category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
+def generate_movie(request: Request, category: str = "Hollywood", genre: str = "Any", exclude: str = "", difficulty: int = 1):
+    diff_map = {
+        1: "Choose very famous, iconic blockbuster movies that most people know.",
+        2: "Choose moderately well-known movies, avoiding the top 10 most obvious ones.",
+        3: "Choose critically acclaimed but lesser-known cult classics.",
+        4: "Choose extremely obscure, obscure indie, or vintage international movies that only true cinephiles would know."
+    }
+    level = min(4, max(1, difficulty))
+    diff_instruction = diff_map[level]
+    
     exclude_text = f" CRITICAL RULE: DO NOT generate any of the following movies: {exclude}. Pick something completely different!" if exclude else ""
-    prompt = f"Generate a random {category} movie from the {genre} genre.{exclude_text} Provide the movie title (in English letters) and an emoji representation (2-6 emojis) for it. Additionally, provide 3 similar but incorrect movie titles to serve as decoys for a multiple choice game. Return ONLY valid JSON with keys 'title', 'emojis', and 'decoys' (a list of 3 strings). For example: {{\"title\": \"Batman\", \"emojis\": \"🦇🕵️\", \"decoys\": [\"Superman\", \"Iron Man\", \"Spider-Man\"]}}."
+    prompt = f"Generate a random {category} movie from the {genre} genre. {diff_instruction}{exclude_text} Provide the movie title (in English letters) and an emoji representation (2-6 emojis) for it. Additionally, provide 3 similar but incorrect movie titles to serve as decoys for a multiple choice game. Return ONLY valid JSON with keys 'title', 'emojis', and 'decoys' (a list of 3 strings). For example: {{\"title\": \"Batman\", \"emojis\": \"🦇🕵️\", \"decoys\": [\"Superman\", \"Iron Man\", \"Spider-Man\"]}}."
     
     completion = client.chat.completions.create(
         model="meta/llama-3.1-70b-instruct",
