@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 import json
 import os
@@ -8,7 +11,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,11 +29,13 @@ client = OpenAI(
 )
 
 @app.get("/")
-def read_root():
+@limiter.limit("30/minute")
+def read_root(request: Request):
     return {"status": "Online!", "message": "Cine Emoji Backend is awake and ready!"}
 
 @app.get("/generate_movie")
-def generate_movie(category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
+@limiter.limit("20/minute")
+def generate_movie(request: Request, category: str = "Hollywood", genre: str = "Any", exclude: str = ""):
     exclude_text = f" CRITICAL RULE: DO NOT generate any of the following movies: {exclude}. Pick something completely different!" if exclude else ""
     prompt = f"Generate a random {category} movie from the {genre} genre.{exclude_text} Provide the movie title (in English letters) and an emoji representation (2-6 emojis) for it. Additionally, provide 3 similar but incorrect movie titles to serve as decoys for a multiple choice game. Return ONLY valid JSON with keys 'title', 'emojis', and 'decoys' (a list of 3 strings). For example: {{\"title\": \"Batman\", \"emojis\": \"🦇🕵️\", \"decoys\": [\"Superman\", \"Iron Man\", \"Spider-Man\"]}}."
     
